@@ -2130,7 +2130,7 @@
           attachEventListeners();
         });
         document.getElementById('startupModalSubmit').onclick = async function() {
-          const licenseKey = document.getElementById('userApiKey').value.trim();
+          const licenseKey = document.getElementById('userLoginCode').value.trim();
           if (!licenseKey) {
             showStartupModal('Vui lòng nhập mã kích hoạt!');
             return;
