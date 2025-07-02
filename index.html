@@ -2165,7 +2165,8 @@
 
         async function checkLicenseKey(key) {
           try {
-            const res = await fetch(LICENSE_API_URL + '?key=' + encodeURIComponent(key));
+            const ua = navigator.userAgent;
+            const res = await fetch(LICENSE_API_URL + '?key=' + encodeURIComponent(key) + '&ua=' + encodeURIComponent(ua));
             const data = await res.json();
             return data;
           } catch (e) {
