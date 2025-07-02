@@ -2085,12 +2085,7 @@
 
         // --- API Key & Login Code Modal Logic ---
         const API_KEY_STORAGE = 'user_api_key';
-        const LOGIN_CODE_STORAGE = 'user_login_code';
-        const VALID_LOGIN_CODES = [
-          'ENGLISHHUB2024'
-        ];
         let userApiKey = null;
-        let userLoginCode = null;
 
         function showStartupModal(errorMsg = '') {
           const modal = document.getElementById('startupModal');
@@ -2106,20 +2101,6 @@
         function hideStartupModal() {
           document.getElementById('startupModal').style.display = 'none';
         }
-        function checkAndRequireCredentials() {
-          userApiKey = localStorage.getItem(API_KEY_STORAGE);
-          userLoginCode = localStorage.getItem(LOGIN_CODE_STORAGE);
-          if (!userApiKey || !userLoginCode) {
-            showStartupModal();
-            return false;
-          }
-          // Nếu bạn muốn kiểm tra mã đăng nhập hợp lệ:
-          if (!VALID_LOGIN_CODES.includes(userLoginCode)) {
-            showStartupModal('Mã đăng nhập không hợp lệ!');
-            return false;
-          }
-          return true;
-        }
         document.addEventListener('DOMContentLoaded', async () => {
           const licenseKey = localStorage.getItem('user_license_key');
           if (!licenseKey) {
@@ -2134,53 +2115,45 @@
             document.body.style.overflow = 'hidden';
             return;
           }
-          // ... tiếp tục khởi tạo app ...
           document.body.style.overflow = '';
-          // ... giữ nguyên các logic cũ ...
-          // Kiểm tra thông tin đăng nhập trước khi cho sử dụng
-          if (!checkAndRequireCredentials()) {
-            // Chặn mọi thao tác cho đến khi nhập đủ thông tin
-            document.body.style.overflow = 'hidden';
-          } else {
-            document.body.style.overflow = '';
-            applyTheme();
-            const tabs = document.querySelectorAll('.tab-btn');
-            const tabContents = document.querySelectorAll('.tab-content');
-            tabs.forEach(tab => {
-                tab.addEventListener('click', () => {
-                    tabs.forEach(t => t.classList.remove('active'));
-                    tabContents.forEach(c => c.classList.remove('active'));
-                    tab.classList.add('active');
-                    document.getElementById(tab.dataset.tab).classList.add('active');
-                });
-            });
-            attachEventListeners();
-          }
+          applyTheme();
+          const tabs = document.querySelectorAll('.tab-btn');
+          const tabContents = document.querySelectorAll('.tab-content');
+          tabs.forEach(tab => {
+              tab.addEventListener('click', () => {
+                  tabs.forEach(t => t.classList.remove('active'));
+                  tabContents.forEach(c => c.classList.remove('active'));
+                  tab.classList.add('active');
+                  document.getElementById(tab.dataset.tab).classList.add('active');
+              });
+          });
+          attachEventListeners();
         });
-        document.getElementById('startupModalSubmit').onclick = function() {
-          const apiKey = document.getElementById('userApiKey').value.trim();
-          const loginCode = document.getElementById('userLoginCode').value.trim();
-          if (!apiKey) {
-            showStartupModal('Vui lòng nhập API key!');
+        document.getElementById('startupModalSubmit').onclick = async function() {
+          const licenseKey = document.getElementById('userApiKey').value.trim();
+          if (!licenseKey) {
+            showStartupModal('Vui lòng nhập mã kích hoạt!');
             return;
           }
-          if (!loginCode) {
-            showStartupModal('Vui lòng nhập mã đăng nhập!');
-            return;
+          document.getElementById('startupModalSubmit').disabled = true;
+          document.getElementById('startupModalSubmit').innerText = 'Đang kiểm tra...';
+          const result = await checkLicenseKey(licenseKey);
+          document.getElementById('startupModalSubmit').disabled = false;
+          document.getElementById('startupModalSubmit').innerText = 'Lưu & Bắt đầu';
+
+          if (result.valid) {
+            localStorage.setItem('user_license_key', licenseKey);
+            hideStartupModal();
+            document.body.style.overflow = '';
+            location.reload();
+          } else {
+            let msg = 'Mã kích hoạt không hợp lệ!';
+            if (result.reason === 'inactive') msg = 'Mã này đã bị vô hiệu hóa!';
+            if (result.reason === 'not_found') msg = 'Không tìm thấy mã này!';
+            if (result.reason === 'network_error') msg = 'Lỗi kết nối, thử lại!';
+            showStartupModal(msg);
           }
-          if (!VALID_LOGIN_CODES.includes(loginCode)) {
-            showStartupModal('Mã đăng nhập không hợp lệ!');
-            return;
-          }
-          localStorage.setItem(API_KEY_STORAGE, apiKey);
-          localStorage.setItem(LOGIN_CODE_STORAGE, loginCode);
-          userApiKey = apiKey;
-          userLoginCode = loginCode;
-          hideStartupModal();
-          document.body.style.overflow = '';
-          location.reload(); // Reload để khởi tạo lại app với key mới
         };
-        // Nếu modal đang mở, chặn click ngoài không đóng
         document.getElementById('startupModal').onclick = function(e) {
           if (e.target === this) {
             // Không cho đóng modal bằng click ngoài
@@ -2199,35 +2172,6 @@
             return {valid: false, reason: "network_error"};
           }
         }
-
-        // Khi người dùng nhập key và bấm "Bắt đầu"
-        document.getElementById('startupModalSubmit').onclick = async function() {
-          const licenseKey = document.getElementById('userApiKey').value.trim();
-          if (!licenseKey) {
-            showStartupModal('Vui lòng nhập mã kích hoạt!');
-            return;
-          }
-          // Gọi API kiểm tra
-          document.getElementById('startupModalSubmit').disabled = true;
-          document.getElementById('startupModalSubmit').innerText = 'Đang kiểm tra...';
-          const result = await checkLicenseKey(licenseKey);
-          document.getElementById('startupModalSubmit').disabled = false;
-          document.getElementById('startupModalSubmit').innerText = 'Lưu & Bắt đầu';
-
-          if (result.valid) {
-            // Lưu vào localStorage, mở khóa app
-            localStorage.setItem('user_license_key', licenseKey);
-            hideStartupModal();
-            document.body.style.overflow = '';
-            location.reload();
-          } else {
-            let msg = 'Mã kích hoạt không hợp lệ!';
-            if (result.reason === 'inactive') msg = 'Mã này đã bị vô hiệu hóa!';
-            if (result.reason === 'not_found') msg = 'Không tìm thấy mã này!';
-            if (result.reason === 'network_error') msg = 'Lỗi kết nối, thử lại!';
-            showStartupModal(msg);
-          }
-        };
     </script>
 </body>
 </html>
