@@ -2145,7 +2145,11 @@
             localStorage.setItem('user_license_key', licenseKey);
             hideStartupModal();
             document.body.style.overflow = '';
-            location.reload();
+            // Không reload trang ở đây nữa, chỉ reload nếu thực sự cần reset toàn bộ app
+            // location.reload(); // Loại bỏ dòng này để tránh reload không cần thiết
+            // Thay vào đó, có thể gọi lại các hàm khởi tạo app nếu cần
+            // Ví dụ: applyTheme(); attachEventListeners(); ...
+            // Hoặc đơn giản là ẩn modal và cho phép sử dụng app luôn
           } else {
             let msg = 'Mã kích hoạt không hợp lệ!';
             if (result.reason === 'inactive') msg = 'Mã này đã bị vô hiệu hóa!';
