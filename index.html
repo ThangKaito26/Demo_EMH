@@ -2101,7 +2101,20 @@
         function hideStartupModal() {
           document.getElementById('startupModal').style.display = 'none';
         }
+        function getApiKey() {
+          return localStorage.getItem(API_KEY_STORAGE);
+        }
+        function setApiKey(key) {
+          localStorage.setItem(API_KEY_STORAGE, key);
+        }
         document.addEventListener('DOMContentLoaded', async () => {
+          // Kiểm tra API key trước khi cho sử dụng app
+          userApiKey = getApiKey();
+          if (!userApiKey) {
+            showStartupModal('Bạn cần nhập API key để sử dụng!');
+            document.body.style.overflow = 'hidden';
+            return;
+          }
           const licenseKey = localStorage.getItem('user_license_key');
           if (!licenseKey) {
             showStartupModal();
@@ -2130,7 +2143,14 @@
           attachEventListeners();
         });
         document.getElementById('startupModalSubmit').onclick = async function() {
+          const apiKey = document.getElementById('userApiKey').value.trim();
           const licenseKey = document.getElementById('userLoginCode').value.trim();
+          if (!apiKey) {
+            showStartupModal('Vui lòng nhập API key!');
+            return;
+          }
+          setApiKey(apiKey);
+          userApiKey = apiKey;
           if (!licenseKey) {
             showStartupModal('Vui lòng nhập mã kích hoạt!');
             return;
@@ -2146,10 +2166,6 @@
             hideStartupModal();
             document.body.style.overflow = '';
             // Không reload trang ở đây nữa, chỉ reload nếu thực sự cần reset toàn bộ app
-            // location.reload(); // Loại bỏ dòng này để tránh reload không cần thiết
-            // Thay vào đó, có thể gọi lại các hàm khởi tạo app nếu cần
-            // Ví dụ: applyTheme(); attachEventListeners(); ...
-            // Hoặc đơn giản là ẩn modal và cho phép sử dụng app luôn
           } else {
             let msg = 'Mã kích hoạt không hợp lệ!';
             if (result.reason === 'inactive') msg = 'Mã này đã bị vô hiệu hóa!';
