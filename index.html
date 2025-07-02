@@ -712,8 +712,8 @@
         }
 
         async function callGemini(prompt, schema = null, isTextOnly = false) {
-            // Lấy API key mới nhất từ localStorage mỗi lần gọi
-            const apiKey = localStorage.getItem('user_api_key');
+            // Luôn lấy API key mới nhất từ localStorage qua getApiKey()
+            const apiKey = getApiKey();
             if (!apiKey) {
                 showStartupModal('Bạn cần nhập API key để sử dụng!');
                 throw new Error('Chưa có API key');
@@ -728,21 +728,17 @@
                 };
             }
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-            
             const response = await fetch(apiUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
-            
             if (!response.ok) {
                 const errorBody = await response.text();
                 console.error("API Error Response:", errorBody);
                 throw new Error(`Lỗi API: ${response.status} ${response.statusText}`);
             }
-
             const result = await response.json();
-            
             if (result.candidates && result.candidates[0]?.content?.parts?.[0]?.text) {
                 const text = result.candidates[0].content.parts[0].text;
                 if (isTextOnly) {
