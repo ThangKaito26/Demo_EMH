@@ -2085,7 +2085,7 @@
 
         // --- API Key & Login Code Modal Logic ---
         const API_KEY_STORAGE = 'user_api_key';
-        let userApiKey = null;
+        const LICENSE_KEY_STORAGE = 'user_license_key';
 
         function showStartupModal(errorMsg = '') {
           const modal = document.getElementById('startupModal');
@@ -2107,17 +2107,25 @@
         function setApiKey(key) {
           localStorage.setItem(API_KEY_STORAGE, key);
         }
-        document.addEventListener('DOMContentLoaded', async () => {
-          // Kiểm tra API key trước khi cho sử dụng app
-          userApiKey = getApiKey();
-          if (!userApiKey) {
-            showStartupModal('Bạn cần nhập API key để sử dụng!');
-            document.body.style.overflow = 'hidden';
-            return;
-          }
-          const licenseKey = localStorage.getItem('user_license_key');
-          if (!licenseKey) {
-            showStartupModal();
+        function getLicenseKey() {
+          return localStorage.getItem(LICENSE_KEY_STORAGE);
+        }
+        function setLicenseKey(key) {
+          localStorage.setItem(LICENSE_KEY_STORAGE, key);
+        }
+        function clearKeysAndLogout() {
+          localStorage.removeItem(API_KEY_STORAGE);
+          localStorage.removeItem(LICENSE_KEY_STORAGE);
+          showStartupModal();
+          document.body.style.overflow = 'hidden';
+        }
+        // Thêm nút đăng xuất nếu muốn
+        window.addEventListener('DOMContentLoaded', async () => {
+          // Kiểm tra API key và license key trước khi cho sử dụng app
+          let userApiKey = getApiKey();
+          let licenseKey = getLicenseKey();
+          if (!userApiKey || !licenseKey) {
+            showStartupModal('Bạn cần nhập API key và mã kích hoạt để sử dụng!');
             document.body.style.overflow = 'hidden';
             return;
           }
@@ -2141,6 +2149,18 @@
               });
           });
           attachEventListeners();
+          // Thêm nút đăng xuất nếu muốn
+          if (!document.getElementById('logoutBtn')) {
+            const btn = document.createElement('button');
+            btn.id = 'logoutBtn';
+            btn.textContent = 'Đăng xuất';
+            btn.className = 'external-btn';
+            btn.style.position = 'fixed';
+            btn.style.bottom = '20px';
+            btn.style.right = '20px';
+            btn.onclick = clearKeysAndLogout;
+            document.body.appendChild(btn);
+          }
         });
         document.getElementById('startupModalSubmit').onclick = async function() {
           const apiKey = document.getElementById('userApiKey').value.trim();
@@ -2149,12 +2169,12 @@
             showStartupModal('Vui lòng nhập API key!');
             return;
           }
-          setApiKey(apiKey);
-          userApiKey = apiKey;
           if (!licenseKey) {
             showStartupModal('Vui lòng nhập mã kích hoạt!');
             return;
           }
+          setApiKey(apiKey);
+          setLicenseKey(licenseKey);
           document.getElementById('startupModalSubmit').disabled = true;
           document.getElementById('startupModalSubmit').innerText = 'Đang kiểm tra...';
           const result = await checkLicenseKey(licenseKey);
@@ -2162,7 +2182,6 @@
           document.getElementById('startupModalSubmit').innerText = 'Lưu & Bắt đầu';
 
           if (result.valid) {
-            localStorage.setItem('user_license_key', licenseKey);
             hideStartupModal();
             document.body.style.overflow = '';
             // Không reload trang ở đây nữa, chỉ reload nếu thực sự cần reset toàn bộ app
